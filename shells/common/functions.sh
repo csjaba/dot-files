@@ -1,3 +1,25 @@
+function zeus() {
+  command zeus $*
+  st=$?
+  stty sane # zeus keeps screwing up the terminal sometimes
+  return $st
+}
+
+function e() {
+    if [ "$#" -eq 0 ]; then
+        emacsclient -a '' -n -c .
+    else
+        emacsclient -a '' -n -c $@
+    fi
+}
+
+function ep() {
+    (
+        cdr # attempt to cd to root directory; fail silently
+        e   # open current directory using editor
+    ) 2>/dev/null
+}
+
 function GET() {
   curl -i -X GET -H "X-Requested-With: XMLHttpRequest" $*
 }
@@ -57,12 +79,12 @@ function extract() {
 # Custom "command not found" handling (ala method_missing):
 
 # Zsh
-function command_not_found_handler() {
-  /usr/bin/env ruby $DOT_FILES/misc/method_missing.rb $*
+function __disabled__command_not_found_handler() {
+  /usr/bin/env ruby $HOME/.dotfiles/misc/method_missing.rb $*
 }
 
 # Bash (call Zsh version)
-function command_not_found_handle() {
+function __disabled__command_not_found_handle() {
   command_not_found_handler $*
   return $?
 }

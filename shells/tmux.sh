@@ -1,22 +1,15 @@
-# I always want to be in a Tmux session. Always.
-#
-# This creates a single always-running "login" session, and creates
-# new session as needed that are bound to "login"'s window group.
-# This lets me have a different terminals tabs/windows have the same tmux
-# windows but be looking at different ones individually
+# I always want to be in a Tmux session when SSHing into a box.
 
-# If we aren't in Tmux, set it up
-if [ -z "$TMUX" ]; then
-  if which tmux 2>&1 >/dev/null; then
-    if [ -z "$(tmux ls | grep 'login:')" ]; then
-      tmux new-session -d -s login # Create a detached session called login
-      tmux new-session -t login    # Create a *new* session bound to the same windows
-    else
-      last_session="$(tmux list-windows -t login | tail -n1 | cut -d: -f1)"
-      tmux new-session -t login \; new-window -a -t $last_session # Create a *new* session bound to "login" and create a new window
+# If we aren't already in Tmux or emacs, set it up
+if command -v tmux &>/dev/null && [ "$SSH_CONNECTION" -a -z "$TMUX" -a -z "$INSIDE_EMACS" -a -z "$EMACS" -a -z "$VIM" -a -z "$VIMRUNTIME" ]; then
+    if tty >/dev/null; then
+        if tmux has-session -t login 2>/dev/null; then
+            tmux new-session -t login \; new-window
+        else
+            tmux new-session -s login
+        fi
+
+        # When Tmux exits, we exit
+        exit
     fi
-
-    # When Tmux exits, we exit
-    exit
-  fi
 fi

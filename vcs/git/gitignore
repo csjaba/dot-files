@@ -49,7 +49,34 @@ doc/tags
 .bundle/*
 .rbx/
 .netrwhist
+jard_errors.txt
 
 # emacs
 .#*
 \#*#
+*.pyc
+.node_modules
+./node_modules
+node_modules
+TAGS
+.nrepl-port
+pom.xml
+pom.xml.asc
+*jar
+/classes/
+/target/
+/checkouts/
+.lein-*
+vendor/gems
+.gem
+.gem/
+.yardoc/
+.terraform/
+.local/
+*.log
+.bash_history
+Session.vim
+.vscode/
+SCRATCH
+/.env
+.tool-versions

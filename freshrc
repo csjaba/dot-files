@@ -1,0 +1,131 @@
+# vim: ft=sh
+
+fresh freshshell/fresh bin/fresh --bin
+fresh freshshell/fresh-open bin/fresh-open --bin
+
+fresh-options --file=~/.ctags
+  fresh misc/ctags
+
+  fresh romainl/ctags-patterns-for-javascript ctagsrc
+  fresh jb55/typescript-ctags .ctags
+  fresh rust-lang/rust.vim ctags/rust.ctags
+  fresh mmorearty/elixir-ctags .ctags
+  fresh https://gist.github.com/noisesmith/ebe8b3f185e34a7de04b1189b21ba59b.git .ctags # Clojure
+fresh-options
+
+fresh languages/clojure/lein/profiles.clj --file=~/.lein/profiles.clj
+
+fresh-options --file=~/.rubocop.yml
+  # # disabled because it relies on custom cops and specific rubocop versions:
+  # fresh testdouble/standard config/base.yml
+  fresh languages/ruby/rubocop.yml
+fresh-options
+
+fresh-options --file # each file as is
+  fresh languages/ruby/gemrc
+  fresh languages/ruby/irbrc
+
+  # asdf conf
+  fresh languages/asdfrc
+  fresh languages/ruby/default-gems # asdf-ruby only
+
+  fresh misc/ackrc
+  fresh misc/agignore
+  fresh misc/inputrc
+  fresh misc/nanorc
+  fresh misc/psqlrc
+  fresh misc/tmux/tmux.conf
+
+  fresh vcs/git/gitattributes
+  fresh vcs/git/gitconfig
+  fresh vcs/git/gitconfig.merge
+  fresh vcs/git/gitconfig.pushurls
+  fresh vcs/git/gitignore
+  fresh --file=~/.git_template/ vcs/git/git_template
+fresh-options
+
+fresh editors/vim/init.nvim --file ~/.config/nvim/init.vim
+
+fresh-options --file=~/.vimrc --marker='"'
+  fresh editors/vim/vimrc
+fresh-options
+
+fresh-options --file=~/.zshrc --marker
+  fresh shells/path.sh # this must come first so we can check for tmux
+  fresh shells/tmux.sh # this must happen before p10k to guarantee it has tty
+
+  fresh shells/zsh/p10k-instant-prompt.zsh
+
+  fresh freshshell/fresh contrib/source-build.sh
+
+  fresh mathiasbynens/dotfiles .functions
+  fresh twe4ked/dotfiles shell/zsh/completion.zsh
+
+  fresh junegunn/fzf shell/completion.zsh
+  fresh junegunn/fzf shell/key-bindings.zsh
+
+  fresh shells/common/\*.sh
+  fresh shells/zsh/lib/\*.zsh
+
+  fresh shells/zsh/p10k.zsh
+
+  fresh shells/local.zsh
+fresh-options
+
+fresh-options --file=~/.bashrc --marker
+  fresh shells/path.sh
+  fresh shells/tmux.sh
+  fresh shells/common/\*.sh
+  fresh shells/bash/\*.bash
+  fresh shells/bash/lib/\*.bash
+  fresh shells/local.bash
+fresh-options
+
+fresh zsh-users/zsh-completions src --file=completion/
+fresh freshshell/fresh contrib/completion/fresh-completion.zsh --file=completion/_fresh
+fresh thoughtbot/dotfiles zsh/completion/_ag --file=completion/_ag
+fresh shells/zsh/completions --file=completion/
+
+fresh romkatv/powerlevel10k . --file=vendor/powerlevel10k/
+
+fresh zdharma/fast-syntax-highlighting . --file=vendor/zsh-fast-syntax-highlighting/
+fresh zsh-users/zsh-history-substring-search . --file=vendor/zsh-history-substring-search/
+fresh zsh-users/zsh-autosuggestions . --file=vendor/zsh-autosuggestions/
+
+fresh garybernhardt/dotfiles bin/run-command-on-git-revisions --bin
+fresh sivel/speedtest-cli speedtest.py --bin=~/bin/speedtest
+
+fresh junegunn/fzf . --file=~/.fzf/
+
+[ -f ~/.gitconfig.local ] || cp ~/.dotfiles/vcs/git/gitconfig.local ~/.gitconfig.local
+
+
+fresh_after_build() {
+  # Fix executable bit
+  # https://github.com/freshshell/fresh/issues/159
+  chmod +x ~/.git_template/hooks/*
+
+  ~/.fresh/source/junegunn/fzf/install --bin
+
+  # If WSL (Windows Subsystem for Linux)
+  if [ -n ${WSL_DISTRO_NAME:-} ] || grep -sqi microsoft /proc/sys/kernel/osrelease; then
+    if ! grep -qs '\[credential\]' ~/.gitconfig.local; then
+      cat >> ~/.gitconfig.local <<-EOF
+# https://liamederzeel.com/store-git-credentials-in-wsl/
+[credential]
+    helper = /mnt/c/Program\\\\ Files/Git/mingw64/libexec/git-core/git-credential-wincred.exe
+EOF
+    fi
+  fi
+
+  # Install Vim plugins
+  if [ -z "${SKIP_VIM_PLUGINS:-}" ]; then
+    vim='vim'
+    command -v nvim &>/dev/null && vim='nvim'
+    $vim +PlugUpdate +PlugClean +qall
+  fi
+
+  if [ -d ~/.asdf/installs ]; then
+    find ~/.asdf/installs -maxdepth 2 -mindepth 2 -type d -printf '%P\n' | sort -Vru -t/ -k1,1 | tr / ' ' > ~/.tool-versions
+  fi
+}

@@ -1,43 +1,587 @@
 set nocompatible
 
-source ~/.vim/ui.vim
-source ~/.vim/autocommands.vim
-source ~/.vim/bundles.vim
+let mapleader = "\<Space>"
 
-" This helps with RVM etc
-set shell=zsh
+if empty(glob('~/.vim/autoload/plug.vim'))
+  silent !curl -fLo ~/.vim/autoload/plug.vim --create-dirs
+      \ https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+  autocmd VimEnter * PlugInstall | source $MYVIMRC
+endif
 
-" http://tim.theenchanter.com/2008/07/crontab-temp-file-must-be-edited-in.html
-set backupskip=/tmp/*,/private/tmp/*"
+call plug#begin('~/.cache/vim/plugs')
+
+Plug 'w0ng/vim-hybrid' " color scheme
+
+Plug 'mhinz/vim-startify'
+let g:startify_session_persistence = 1
+let g:startify_session_autoload = 1
+let g:startify_fortune_use_unicode = 1
+let g:startify_update_oldfiles = 1
+let g:startify_change_to_vcs_root = 1
+let g:startify_change_to_dir = 0
+let g:startify_lists = [
+  \ { 'type': 'dir',       'header': ['   Recent '. getcwd()] },
+  \ { 'type': 'files',     'header': ['   Recent']            },
+  \ { 'type': 'bookmarks', 'header': ['   Bookmarks']      },
+  \ { 'type': 'sessions',  'header': ['   Sessions']       },
+  \ { 'type': 'commands',  'header': ['   Commands']       },
+  \ ]
+
+Plug 'tpope/vim-sensible' " Sensible defaults, duh
+
+" Out of the box support for many languages
+Plug 'sheerun/vim-polyglot', { 'tag': '*' }
+
+Plug 'scrooloose/nerdtree', { 'tag': '*' }
+let g:NERDTreeWinPos='right'
+let g:NERDTreeRespectWildIgnore=1 " Hide things from wildignore
+let g:NERDTreeMouseMode = 3 " Nerd tree: single clicks open file/dir
+let g:NERDTreeNaturalSort = 1
+nmap <leader>tt :NERDTreeToggle<CR>
+nmap <leader>fo :NERDTreeFind<CR>
+"Plug 'tpope/vim-vinegar'  " Nicer netrw
+let loaded_netrwPlugin=1 " Disable netrw completely http://stackoverflow.com/a/21687112
+
+Plug 'mbbill/undotree', { 'on': ['UndotreeToggle', 'UndotreeFocus', 'UndotreeShow', 'UndotreeHide'] }
+let g:undotree_WindowLayout = 2
+let g:undotree_SetFocusWhenToggle = 1
+nmap <leader>u :UndotreeToggle<CR>
+nmap <leader>tu :UndotreeToggle<CR>
+
+Plug 'tpope/vim-commentary'
+" There is no ASCII char for Control+/ (common shortcut for commentign), but
+" most terminals match that key combo to Control+_, so we will capture that
+" instead.
+nmap <C-_> gcc
+xmap <C-_> gcgv
+imap <C-_> <C-\><C-O>gcc
+
+Plug 'tpope/vim-dispatch'
+Plug 'tpope/vim-eunuch'
+Plug 'tpope/vim-endwise'  " Auto-add 'end' etc appropriately in various languages
+Plug 'tpope/vim-fugitive', {'tag': '*', 'branch': 'master'}
+Plug 'rhysd/committia.vim' " More convenient UI when using Vim as EDITOR for `git commit`
+Plug 'hotwatermorning/auto-git-diff' " Show diffs in split when doing a `git rebase -i`
+Plug 'tpope/vim-git'
+Plug 'tpope/vim-repeat'
+Plug 'tpope/vim-sleuth'   " auto-config indent and tabs etc based on other files
+Plug 'tpope/vim-surround' " quoting/parenthesizing made simple
+Plug 'wellle/targets.vim'
+Plug 'terryma/vim-expand-region'
+if has('signs')
+  Plug 'airblade/vim-gitgutter'
+endif
+Plug 'kana/vim-smartinput' " smart pairwise characters
+
+Plug '~/.fzf' " Installation of bins handled by Fresh, separately
+Plug 'junegunn/fzf.vim'
+if executable('ag')
+  let $FZF_DEFAULT_COMMAND = 'ag -l --hidden .'
+endif
+map <Leader><Leader> :GFiles<CR>
+map <C-p> :Files<CR>
+" autocmd FileType fzf nmap <buffer> <silent> <ESC> :q<CR>
+
+" make t, f, T, F, etc all multi-line
+Plug 'dahu/vim-fanfingtastic'
+
+" Preview register contents before selecting the register
+Plug 'junegunn/vim-peekaboo'
+
+Plug 'junegunn/vim-easy-align', { 'on': ['<Plug>(EasyAlign)', 'EasyAlign'] }
+vmap <Enter> <Plug>(EasyAlign)
+
+" When re-opening a file, start cursor on last edit location
+Plug 'farmergreg/vim-lastplace'
+
+Plug 'thisivan/vim-matchit' " extended matching for html, latex, and many other languages
+Plug 'kana/vim-textobj-user' " Create new text objects
+Plug 'michaeljsmith/vim-indent-object'
+
+Plug 'haya14busa/incsearch.vim', { 'on': ['<Plug>(incsearch-forward)', '<Plug>(incsearch-backward)', '<Plug>(incsearch-stay)']}
+Plug 'haya14busa/incsearch-fuzzy.vim', { 'on': ['<Plug>(incsearch-fuzzy-/)', '<Plug>(incsearch-fuzzy-?)', '<Plug>(incsearch-fuzzy-stay)']}
+nmap /  <Plug>(incsearch-forward)
+xmap /  <Plug>(incsearch-forward)
+nmap ?  <Plug>(incsearch-backward)
+xmap ?  <Plug>(incsearch-backward)
+map g/ <Plug>(incsearch-stay)
+map z/  <Plug>(incsearch-fuzzy-/)
+map z?  <Plug>(incsearch-fuzzy-?)
+nmap zg/ <Plug>(incsearch-fuzzy-stay)
+
+Plug 'Yggdroot/indentLine'
+let g:indentLine_color_term = 239
+let g:indentLine_color_gui = '#504945'
+let g:indentLine_fileTypeExclude = ['help', 'man', 'startify', 'vimfiler', 'markdown', 'fzf']
+let g:indentLine_char = '┊'
+
+" Run a find-and-replace using the last search term
+nnoremap <M-r> :%s/<C-r>///g<Left><Left>
+
+" Make * and # work with a visual selection (in normal mode, it falls back to
+" default behaviour of searching for current word)
+Plug 'thinca/vim-visualstar'
+
+Plug 'honza/vim-snippets' " Contains snippets that coc-snippets can expand
+Plug 'neoclide/coc.nvim', {'branch': 'release'}
+let g:coc_global_extensions = [
+\   'coc-actions',
+\   'coc-css',
+\   'coc-highlight',
+\   'coc-html',
+\   'coc-json',
+\   'coc-lists',
+\   'coc-rust-analyzer',
+\   'coc-snippets',
+\   'coc-solargraph',
+\   'coc-tabnine',
+\   'coc-tailwindcss',
+\   'coc-tsserver',
+\   'coc-vimlsp',
+\]
+
+Plug 'liuchengxu/vim-which-key' ", { 'on': ['WhichKey', 'WhichKey!'] }
+set timeoutlen=300
+autocmd! User vim-which-key call which_key#register('<Space>', 'g:which_key_map')
+nnoremap <silent> <leader> :<c-u>WhichKey '<Space>'<CR>
+
+Plug 'tpope/vim-bundler'
+Plug 'tpope/vim-rails'
+Plug 'tpope/vim-rake'
+Plug 'thisivan/vim-ruby-matchit'
+Plug 'nelstrom/vim-textobj-rubyblock', { 'for': 'ruby' }
+
+Plug 'gko/vim-coloresque'
+
+Plug 'dense-analysis/ale'
+let g:ale_completion_enabled = 1
+let g:ale_fix_on_save = 1
+let g:ale_fixers = {
+\   '*': ['remove_trailing_lines', 'trim_whitespace'],
+\   'javascript': ['eslint'],
+\   'elixir': ['mix_format'],
+\   'rust': [],
+\   'ruby': [],
+\}
+let g:ale_lint_on_save = 1
+let g:ale_linters = {
+\   'rust': [],
+\   'ruby': [],
+\}
+
+" https://github.com/dense-analysis/ale#faq-coc-nvim
+let g:ale_disable_lsp = 1
+
+Plug 'vim-test/vim-test'
+nmap <silent> <Leader>tn :TestNearest<CR>
+nmap <silent> <Leader>tf :TestFile<CR>
+nmap <silent> <Leader>ts :TestSuite<CR>
+nmap <silent> <Leader>tl :TestLast<CR>
+nmap <silent> <Leader>tg :TestVisit<CR>
+
+" Change working directory to .git root
+Plug 'airblade/vim-rooter'
+let g:rooter_cd_cmd="lcd"
+
+Plug 'vim-airline/vim-airline'
+let g:airline_powerline_fonts = 1
+let g:airline#extensions#tabline#enabled = 1
+let g:airline#extensions#tabline#left_sep = ' '
+let g:airline#extensions#tabline#left_alt_sep = '|'
+
+" ^A / ^Z on a column of numbers will increment them in ascending order
+" (i.e. a bullett list)
+Plug 'triglav/vim-visual-increment'
+
+Plug 'dyng/ctrlsf.vim'
+
+Plug 'mg979/vim-visual-multi'
+
+call plug#end()
+hi Normal ctermbg=none
+
+" if hidden not set, TextEdit might fail.
+set hidden
+
+" Better display for messages
+set cmdheight=2
+
+" Smaller updatetime for CursorHold & CursorHoldI
+set updatetime=300
+
+" always show signcolumns
+set signcolumn=yes
+
+" Use tab for trigger completion with characters ahead and navigate.
+" Use command ':verbose imap <tab>' to make sure tab is not mapped by other plugin.
+inoremap <silent><expr> <TAB>
+      \ pumvisible() ? "\<C-n>" :
+      \ <SID>check_back_space() ? "\<TAB>" :
+      \ coc#refresh()
+inoremap <expr><S-TAB> pumvisible() ? "\<C-p>" : "\<C-h>"
+
+function! s:check_back_space() abort
+  let col = col('.') - 1
+  return !col || getline('.')[col - 1]  =~# '\s'
+endfunction
+
+" Use <c-space> for trigger completion.
+inoremap <silent><expr> <c-space> coc#refresh()
+
+" Use <cr> for confirm completion, `<C-g>u` means break undo chain at current position.
+" Coc only does snippet and additional edit on confirm.
+"inoremap <expr> <CR> pumvisible() ? "\<C-y>" : "\<C-g>u\<CR>"
+" NOTE: above mapping disabled due to https://github.com/tpope/vim-endwise/issues/22#issuecomment-446042476
+let g:endwise_no_mappings = v:true
+" inoremap <expr> <Plug>CustomCocCR pumvisible() ? coc#_select_confirm() : "\<C-g>u\<CR>\<c-r>=coc#on_enter()\<CR>"
+inoremap <expr> <Plug>CustomCocCR pumvisible() ? "\<C-y>" : "\<C-g>u\<CR>\<c-r>=coc#on_enter()\<CR>"
+imap <CR> <Plug>CustomCocCR<Plug>DiscretionaryEnd
+
+" Use `[c` and `]c` for navigate diagnostics
+nmap <silent> [c <Plug>(coc-diagnostic-prev)
+nmap <silent> ]c <Plug>(coc-diagnostic-next)
+
+" Remap keys for gotos
+nmap <silent> gd <Plug>(coc-definition)
+nmap <silent> gy <Plug>(coc-type-definition)
+nmap <silent> gi <Plug>(coc-implementation)
+nmap <silent> gr <Plug>(coc-references)
+
+" Use K for show documentation in preview window
+nnoremap <silent> K :call <SID>show_documentation()<CR>
+
+function! s:show_documentation()
+  if &filetype == 'vim'
+    execute 'h '.expand('<cword>')
+  else
+    call CocAction('doHover')
+  endif
+endfunction
+
+" Highlight symbol under cursor on CursorHold
+autocmd CursorHold * silent call CocActionAsync('highlight')
+
+" Remap for rename current word
+nmap <leader>rn <Plug>(coc-rename)
+
+" Remap for format selected region
+vmap <leader>f  <Plug>(coc-format-selected)
+nmap <leader>f  <Plug>(coc-format-selected)
+
+" Setup formatexpr specified filetype(s).
+augroup mygroup
+  autocmd!
+  autocmd FileType typescript,json setl formatexpr=CocAction('formatSelected')
+augroup end
+
+" Remap for do codeAction of selected region, ex: `<leader>aap` for current paragraph
+vmap <leader>a  <Plug>(coc-codeaction-selected)
+nmap <leader>a  <Plug>(coc-codeaction-selected)
+
+" Remap for do codeAction of current line
+nmap <leader>ac  <Plug>(coc-codeaction)
+
+syntax on
+
+" Visual
+  set ruler
+  set guioptions=ce
+  set linespace=2
+  set background=dark
+  set laststatus=2
+  colorscheme hybrid
+
+  set showmatch                  " Briefly jump to a paren once it's balanced
+  set matchpairs+=\<:\>
+  " With `Cursor guibg=fg guifg=bg` + default MatchParen styling, it makes the
+  " cursor seem like it has actually jumped to the patching pair. This instead
+  " makes the MatchParen style preserve the background color, so that the
+  " Cursor can flip it appropriately.
+  hi! MatchParen cterm=NONE,bold gui=NONE,bold guibg=bg guifg=lightblue ctermbg=bg ctermfg=lightblue
+
+" Tabs/Whitespace
+  set tabstop=2                  " a Tab take up 2 spaces
+  set shiftwidth=2               " (un)indent 2 spaces at at ime
+  set autoindent                 " preserve previous indent level when inserting new line
+  set smarttab                   " insert/delete a tab's work of spaces at a time
+  set expandtab                  " insert actual spaces, not tabs
+  set nowrap                     " don't wrap long lines
+  set backspace=indent,eol,start " allow backspacing over everything in insert mode
+
+  " Toggle show tabs and trailing spaces (,c)
+  set list
+  set listchars=tab:⤑\ ,trail:·,eol:↵,nbsp:_
+  set fillchars=vert:\ ,fold:-
+  nnoremap <Leader>tc :set list! list?<CR>
+
+" Misc
+  set switchbuf=usetab,newtab   " Open new buffers in tab, switch to existing tab if already open
+  set nostartofline             " Avoid moving cursor to BOL when jumping around
+  set virtualedit=all           " Let cursor move past the last char
+  set whichwrap=b,s,h,l,<,>,[,]
+  set autoread                  " watch for file changes
+  set mouse=a                   " mouse can be handy sometimes
+  if !has('nvim')
+    set ttymouse=xterm2         " Needed to get mouse working when in Tmux/screen
+  endif
+  set fileformats=unix
+  set history=1000
+  set title                     " Show title in Terminal
+
+" Bells
+  set visualbell
+  set noerrorbells              " No noise.
+  set vb t_vb=                  " disable any beeps or flashes on error
+
+" Searching
+  set hlsearch                  " highlight search matches and keep them highlighted
+  set incsearch                 " start matching search before hitting enter
+  set ignorecase                " case-insensitive searching by default
+  set smartcase                 " but if searching with multiple cases, treat it as case-sensitive
+
+  " center current search result in middle of screen
+  nnoremap n nzz
+  nnoremap N Nzz
+  nnoremap * *zz
+  nnoremap # #zz
+  nnoremap g* g*zz
+  nnoremap g# g#zz
+
+" Work around bug that leaves cursor in middle of line
+  nnoremap dd ddI<Esc>
+
+" Tab completion
+  set wildmode=list:longest,list:full
+  set wildignore+=*.o,*.obj,.git,*.rbc,*.swp
+
+  nmap <C-t> :tabnew<CR>
+
+" Navigate cursor up/down by lines on screen, not lines in file
+  nmap j gj
+  nmap k gk
+
+" Reselect visual block after adjusting indentation
+  vnoremap < <gv
+  vnoremap > >gv
+
+" Adjust indentation with single keypress
+  nnoremap < <<
+  nnoremap > >>
+
+" Nicer splitting
+  set splitbelow
+  set splitright
+
+" Emacs-like keys for the command line and insert mode
+  noremap! <C-A> <Home>
+  noremap! <C-E> <End>
+
+"  Always show cursorline, but only in current window.
+  set scrolloff=3
+  set scrolljump=10
+
+set number          " line numbers
+set relativenumber
+
+" I keep deleting words when I want to switch windows
+imap <C-w> <Esc><C-w>
+
+" Map control-S to save (<C-U> makes sure no range is inserted into command
+" execution)
+nmap <silent> <C-s> :<C-U>w<CR>
+vmap <silent> <C-s> :<C-U>w<CR>gv
+
+" Share clipboard with OS
+set clipboard=unnamed,unnamedplus
+
+" May only work in iTerm2 and may have other bad effects,
+" but this shows a block in normal mode, and vertical bar
+" in insert mode.
+if exists('$TMUX')
+  " https://github.com/sjl/vitality.vim/issues/8#issuecomment-7664649
+  let &t_SI = "\<Esc>[3 q"
+  let &t_EI = "\<Esc>[0 q"
+
+  if !has('nvim')
+    set term=screen-256color
+  endif
+else
+  let &t_SI = "\<Esc>]50;CursorShape=1\x7"
+  let &t_EI = "\<Esc>]50;CursorShape=0\x7"
+endif
+
+runtime macros/matchit.vim
+
+function! <SID>StripTrailingWhitespaces()
+  " Preparation: save last search, and cursor position.
+  let _s=@/
+  let l = line(".")
+  let c = col(".")
+  " Do the business:
+  %s/\s\+$//e
+  " Clean up: restore previous search history, and cursor position
+  let @/=_s
+  call cursor(l, c)
+endfunction
+
+" Strip trailing whitespace on command
+nmap <Leader>sw :call <SID>StripTrailingWhitespaces()<CR>
+
+augroup the_rest
+  au!
+
+  if !has('nvim')
+    " Attempted fix for Vim losing mouse support when inside Tmux
+    autocmd TermResponse,CursorHold,CursorHoldI * set ttymouse=xterm2
+  endif
+
+  " Create parent directory if it doesn't exist before writing file
+  " (http://stackoverflow.com/questions/4292733/vim-creating-parent-directories-on-save)
+  autocmd BufWritePre * if expand("<afile>")!~#'^\w\+:/' && !isdirectory(expand("%:h")) | execute "silent! !mkdir -p ".shellescape(expand('%:h'), 1) | redraw! | endif
+
+  " make and python use real tabs
+  autocmd FileType make    set noexpandtab
+  autocmd FileType python  set noexpandtab
+
+  autocmd BufRead,BufNewFile gitconfig set ft=gitconfig
+
+  " Strip trailing whitespace on save
+  " TODO: do not do this for all file types. In particular, bypass this for git patchsets (i.e. from `git add -p`) as
+  " it can fuck with cleanly applying patches
+  autocmd BufWritePre * :call <SID>StripTrailingWhitespaces()
+augroup end
+
+silent! !bash -c "mkdir -p ~/.cache/vim/{backups,swaps,undos} &>/dev/null"
+set undofile                            " persistent undos
+set undodir=~/.cache/vim/undos//        " where to store undo histories (trailing // is important)
+set directory=~/.cache/vim/swaps//      " store swap files here (trailing // is important)
+set backupdir=~/.cache/vim/backups//    " store file backups here (trailing // is important)
+set backupskip=/tmp/*,/private/tmp/*"   " don't use backups for tmp files
+
+set autoread
+
+set modeline
+set modelines=5
 
 " For when you forget to sudo.. Really Write the file.
 cmap w!! w !sudo tee % >/dev/null
 
-" Send visual selection to gist.github.com
-" Requires gist (brew install gist)
-vnoremap <leader>G :w !gist -p -t %:e \| pbcopy<cr>
-
 " CTags
 map <Leader>rt :!ctags --extra=+f -R *<CR><CR>
-set tags=tmp/tags;/,./tmp/tags;/,tags;/,./tags;/
+set tags=./.git/tags;./tmp/tags;/,./tags;/
 
-" ,w - write file
-nnoremap <silent> ,w :write<CR>
+nmap <leader>tp :set invpaste paste?<CR>
+nmap <leader>tn :set invnumber number?<CR>
+nmap <leader>tr :set invrelativenumber relativenumber?<CR>
 
-set pastetoggle=<Leader>p
-map <leader>p :set invpaste paste?<CR>
+if executable('ag')
+  let g:ackprg = 'ag --vimgrep --hidden'
+endif
+ " comment line
+" For working on highlight/syntax rules
+map <F10> :echo "hi<" . synIDattr(synID(line("."),col("."),1),"name") . '> trans<' . synIDattr(synID(line("."),col("."),0),"name") . "> lo<" . synIDattr(synIDtrans(synID(line("."),col("."),1)),"name") . ">"<CR>
 
-" Theme development help
-nmap <F10> :echo "hi<" . synIDattr(synID(line("."),col("."),1),"name") . '> trans<'
-\ . synIDattr(synID(line("."),col("."),0),"name") . "> lo<"
-\ . synIDattr(synIDtrans(synID(line("."),col("."),1)),"name") . ">"<CR>
+" I pretty much only work with Postgres SQL, so assume *.sql files belong to
+" that syntax:
+let g:sql_type_default = 'pgsql'
 
-" Quick editing of common dot-files
-map <Leader>vv :edit $MYVIMRC<CR>
-map <Leader>gg :edit $MYGVIMRC<CR>
-map <Leader>.. :cd ~/.config<CR>:enew<CR>
+" Make copy/paste work kinda normally
+"
+" https://stackoverflow.com/a/14786750/1155048
+set pastetoggle=<F10>
+inoremap <C-v> <F10><C-r>+<F10>
+vnoremap <C-c> "+y
+
+" Copy current file path to clipboard
+nnoremap <C-c> :let @+ = expand("%:p") \| echo '"' . expand("%:p") . '" copied to clipboard.'<CR>
+
+" Search for current visual selection
+vnoremap <C-f> y<ESC>/<c-r>"<CR>
+
+" Bubble lines up/down
+nmap <M-k> :m-2<CR>
+nmap <M-j> :m+1<CR>
+nmap <M-Up> :m-2<CR>
+nmap <M-Down> :m+1<CR>
+vmap <M-k> :m-2<CR>gv
+vmap <M-j> :m'>+1<CR>gv
+vmap <M-Up> :m-2<CR>gv
+vmap <M-Down> :m'>+1<CR>gv
+
+" highlight last inserted text
+nnoremap gV `[v`]
+
+nmap <silent> [b :bprevious<CR>
+nmap <silent> ]b :bnext<CR>
+nmap <silent> ]t :tprevious<CR>
+nmap <silent> [t :tnext<CR>
+
+set formatoptions=   " Clear so I can add with comments (see `:help fo-table`)
+set formatoptions+=c " Auto-wrap comments, inserting current comment leader
+set formatoptions+=r " Insert comment leader when hitting <Enter> within a comment
+set formatoptions+=j " Remove comment leader when joining comment lines
+set formatoptions+=o " Ditto except for when using o or O
+set formatoptions+=q " Allow formatting text with `gq`
+set formatoptions+=n " Recognise numbered lists for sake of indenting wrapped content
+
+set nojoinspaces " Don't insert 2 spaces after punctuation when joining jines
+
+hi ColorColumn guibg=#222222 ctermbg=235
+set colorcolumn=79,120,150
+set textwidth=119
+
+" Show incremental previews of commands (such as :s[ubstitute])
+if has('nvim')
+  set inccommand=nosplit
+endif
+
+" If there's no EOL at the end of the file, don't mess up the diff by adding
+" one
+set nofixeol
+
+set noautochdir
+
+" https://dougblack.io/words/a-good-vimrc.html
+set lazyredraw
+
+" Show current syntax item for position under cursor
+" https://vi.stackexchange.com/a/11877/11631
+nnoremap zS :echo join(reverse(map(synstack(line('.'), col('.')), 'synIDattr(v:val,"name")')), ' ')<CR>
+
+" Start elixir tooling with a custom MIX_ENV so that compilation by that
+" tooling doesn't negatively affect Phoenix auto-reloading
+"
+" https://github.com/phoenixframework/phoenix/issues/1165#issuecomment-437130681
+let $MIX_ENV='test'
+
+" Terminal Function
+" Courtesy of https://www.reddit.com/r/vim/comments/8n5bzs/using_neovim_is_there_a_way_to_display_a_terminal/dzt3fix
+let g:term_buf = 0
+let g:term_win = 0
+function! TermToggle(height)
+    if win_gotoid(g:term_win)
+        hide
+    else
+        botright new
+        exec "resize " . a:height
+        try
+            exec "buffer " . g:term_buf
+        catch
+            call termopen($SHELL, {"detach": 0})
+            let g:term_buf = bufnr("")
+            set nonumber
+            set norelativenumber
+            set signcolumn=no
+        endtry
+        startinsert!
+        let g:term_win = win_getid()
+    endif
+endfunction
+nnoremap <silent> <leader>te :call TermToggle(12)<CR>
+nnoremap <A-t> :call TermToggle(12)<CR>
+inoremap <A-t> <Esc>:call TermToggle(12)<CR>
+tnoremap <A-t> <C-\><C-n>:call TermToggle(12)<CR>
 
 if filereadable(expand('~/.vimrc.local'))
   source ~/.vimrc.local
 endif
-

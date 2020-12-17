@@ -1,20 +1,62 @@
 [alias]
+	st = status
 	co = checkout
-	put = push origin HEAD
-	push-all = "!for i in $(git config --list | grep -E ^remote\\..+\\.url | sed -E 's/^remote\\.(.*)\\.url=.*/\\1/'); do git push $i master; done"
+	commit = commit -v
+	c = commit -v
+	ca = commit -v -a
+	diff = diff --word-diff
+	dc = diff --cached
+	lp = log --patch
+	lg = log --decorate --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr)%Creset' --abbrev-commit --date=relative
+	shas = log --reverse --pretty=format:'%h' --abbrev-commit
+	me = !sh -c 'echo `git config user.name` \\<`git config user.email`\\>'
+	mine = !sh -c 'git lg --author=\"`git me`\"'
+	br = branch
+
+	fixup = "!f() { TARGET=$(git rev-parse "$1"); git commit --fixup=$TARGET ${@:2} && EDITOR=true git rebase -i --autostash --autosquash $TARGET^; }; f"
+
+	# Add file excluding whitespace changes (http://stackoverflow.com/a/7149602/56690)
+	addnw = !sh -c 'git diff -U0 -w --no-color "$@" | git apply --cached --ignore-whitespace --unidiff-zero -'
+
 	unadd = reset HEAD
-	ctags = !.git/hooks/ctags
+	ctags = "!$(git rev-parse --show-toplevel)/.git/hooks/ctags"
+	latest = for-each-ref --sort=-committerdate --format='%(committerdate:relative) -> %(refname:short)'
+	branch-name = !git for-each-ref --format='%(refname:short)' `git symbolic-ref HEAD`
+	assume = update-index --assume-unchanged
+	unassume = update-index --no-assume-unchanged
+	assumed = "!git ls-files -v | grep ^h | cut -c 3-"
+	unassumeall = "!git assumed | xargs git update-index --no-assume-unchanged"
+	assumeall = "!git st -s | awk {'print $2'} | xargs git assume"
+
+	# From https://github.com/garybernhardt/dotfiles/blob/master/bin/git-churn
+	churn = "!git log --all -M -C --name-only --format='format:' \"$@\" | sort | grep -v '^$' | uniq -c | sort | awk 'BEGIN {print \"count\tfile\"} {print $1 \"\t\" $2}' | sort -g"
+
+	# Write directly to versioned file (as `fresh`-managed one will be read-only)
+	config = config --file ~/.dotfiles/vcs/git/gitconfig
 [apply]
-	whitespace = nowarn
+	whitespace = fix
 [color]
 	branch = auto
 	diff = auto
 	status = auto
 	ui = auto
+[log]
+	follow = true
 [core]
 	attributesfile = ~/.gitattributes
 	excludesfile = ~/.gitignore
-	whitespace = fix
+	whitespace = trailing-space,space-before-tab
+	precomposeunicode = true
+	#editor = vim -u NONE +0 -c 'syntax on'
+	editor = vim +0 -c 'syntax on'
+
+	# # https://github.com/mookid/diffr
+	# pager = diffr | less -R
+
+	# https://github.com/dandavison/delta
+	pager = delta --theme='Monokai Extended Bright'
+[interactive]
+	diffFilter = delta --color-only
 [branch]
 	autosetupmerge = always
 	autosetuprebase = local
@@ -24,12 +66,38 @@
 	user = bjeanes
 [init]
 	templatedir = ~/.git_template
-[rerere]
-	enabled = 1
+	defaultBranch = main
 [include]
 	path = .gitconfig.github
 	path = .gitconfig.pushurls
 	path = .gitconfig.merge
 	path = .gitconfig.local
 [credential]
-	helper = osxkeychain
+	username = bjeanes
+[diff]
+	algorithm = minimal
+	mnemonicprefix = true
+	renames = copies
+	tool = ksdiff
+[difftool]
+	prompt = false
+[difftool "ksdiff"]
+	cmd = "ksdiff $LOCAL $REMOTE"
+[pull]
+	rebase = true
+[push]
+	default = current
+[advice]
+	statusHints = false
+[remote]
+	pushdefault = origin
+[status]
+	short = true
+	branch = true
+	showUntrackedFiles = all
+	submoduleSummary = 1
+[versionsort]
+	prereleaseSuffix = -rc
+	prereleaseSuffix = -pre
+	prereleaseSuffix = -alpha
+	prereleaseSuffix = -beta
